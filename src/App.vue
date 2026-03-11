@@ -1,4 +1,4 @@
-<template>
+'<template>
   <div class="relative min-h-screen overflow-hidden">
     <!-- 3D粉红泡泡背景 -->
     <div ref="bubbleContainer" class="fixed inset-0 -z-10"></div>
@@ -92,25 +92,25 @@
       <section id="hero" class="section relative">
         <div class="max-w-5xl mx-auto w-full">
           <div class="text-center mb-12">
-            <h1 class="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-4 animate-fade-in-up">23rd Birthday Party</h1>
+            <h1 class="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-4 animate-fade-in-up">Cissie's 23rd Birthday Party</h1>
             <p class="text-2xl md:text-3xl font-elegant text-dark/80 mb-8 animate-fade-in-up" style="animation-delay: 0.2s;">致我亲爱的朋友</p>
           </div>
           
           <!-- 3D轮播图 -->
-          <div class="mb-12 max-w-2xl mx-auto">
+          <div class="mb-12 max-w-4xl mx-auto">
             <Swiper
               :modules="[EffectCoverflow, Navigation, Pagination, Autoplay]"
               effect="coverflow"
               grabCursor
               centeredSlides
-              slidesPerView="3"
+              slidesPerView="auto"
               spaceBetween="5"
               loop
               :coverflowEffect="{
                 rotate: 0,
-                stretch: -120,
-                depth: 150,
-                modifier: 1.5,
+                stretch: -40,
+                depth: 100,
+                modifier: 1.2,
                 slideShadows: true
               }"
               :autoplay="{
@@ -119,11 +119,21 @@
               }"
               pagination
               navigation
-              class="w-full h-48 md:h-[300px]"
+              class="w-full h-80 md:h-[400px]"
+              :breakpoints="{
+                320: {
+                  slidesPerView: 1.8,
+                  spaceBetween: 3
+                },
+                768: {
+                  slidesPerView: 3.5,
+                  spaceBetween: 5
+                }
+              }"
             >
               <SwiperSlide v-for="(image, index) in galleryImages" :key="index" class="relative rounded-2xl overflow-hidden shadow-xl">
                 <div class="relative w-full h-full overflow-hidden">
-                  <img :src="image" alt="Gallery image" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                  <img :src="image" alt="Gallery image" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" loading="lazy" />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                   <div class="absolute inset-0 border-4 border-white/20 rounded-2xl"></div>
                 </div>
@@ -436,69 +446,69 @@ const activeSection = ref('hero')
 
 // 图片数据
 const galleryImages = ref([
-  '/src/img/1.jpg',
-  '/src/img/20260311221158_780_1.jpg',
-  '/src/img/20260311221159_781_1.jpg',
-  '/src/img/20260311221200_782_1.jpg',
-  '/src/img/20260311221201_783_1.jpg',
-  '/src/img/20260311221444_784_1.jpg',
-  '/src/img/20260311221445_785_1.jpg',
-  '/src/img/20260311221446_786_1.jpg',
-  '/src/img/20260311221447_787_1.jpg',
-  '/src/img/20260311222117_795_1.jpg',
-  '/src/img/55.jpg',
-  '/src/img/65e589d136ceac0b273846ba4d6b3638.jpg',
-  '/src/img/78cd8abbee5e4ad5b7916eb345c5fcb2.jpg',
-  '/src/img/8209980757b585cecdc8710a2552cb4c.jpg',
-  '/src/img/SGD4.jpg',
-  '/src/img/a8e351e2f210f0f53827deea3def6d70.jpg',
-  '/src/img/bd49cb9e3fc78944de1f440b22c57aa7.jpg',
-  '/src/img/udhgiuhguG.jpg',
-  '/src/img/微信图片_20260311221448_788_1.jpg',
-  '/src/img/微信图片_20260311222103_789_1.jpg',
-  '/src/img/微信图片_20260311222105_790_1.jpg',
-  '/src/img/微信图片_20260311222107_791_1.jpg',
-  '/src/img/微信图片_20260311222110_793_1.jpg',
-  '/src/img/微信图片_20260311222114_794_1.jpg',
-  '/src/img/微信图片_20260311222119_796_1.jpg',
-  '/src/img/微信图片_20260311222121_797_1.jpg',
-  '/src/img/微信图片_20260311222124_798_1.jpg',
-  '/src/img/微信图片_20260311222127_799_1.jpg',
-  '/src/img/微信图片_20260311222130_801_1.jpg',
-  '/src/img/微信图片_20260311222221_803_1.jpg',
-  '/src/img/微信图片_20260311222224_804_1.jpg',
-  '/src/img/微信图片_20260311222231_805_1.jpg'
+  './img/1.jpg',
+  './img/20260311221158_780_1.jpg',
+  './img/20260311221159_781_1.jpg',
+  './img/20260311221200_782_1.jpg',
+  './img/20260311221201_783_1.jpg',
+  './img/20260311221444_784_1.jpg',
+  './img/20260311221445_785_1.jpg',
+  './img/20260311221446_786_1.jpg',
+  './img/20260311221447_787_1.jpg',
+  './img/20260311222117_795_1.jpg',
+  './img/55.jpg',
+  './img/65e589d136ceac0b273846ba4d6b3638.jpg',
+  './img/78cd8abbee5e4ad5b7916eb345c5fcb2.jpg',
+  './img/8209980757b585cecdc8710a2552cb4c.jpg',
+  './img/SGD4.jpg',
+  './img/a8e351e2f210f0f53827deea3def6d70.jpg',
+  './img/bd49cb9e3fc78944de1f440b22c57aa7.jpg',
+  './img/udhgiuhguG.jpg',
+  './img/微信图片_20260311221448_788_1.jpg',
+  './img/微信图片_20260311222103_789_1.jpg',
+  './img/微信图片_20260311222105_790_1.jpg',
+  './img/微信图片_20260311222107_791_1.jpg',
+  './img/微信图片_20260311222110_793_1.jpg',
+  './img/微信图片_20260311222114_794_1.jpg',
+  './img/微信图片_20260311222119_796_1.jpg',
+  './img/微信图片_20260311222121_797_1.jpg',
+  './img/微信图片_20260311222124_798_1.jpg',
+  './img/微信图片_20260311222127_799_1.jpg',
+  './img/微信图片_20260311222130_801_1.jpg',
+  './img/微信图片_20260311222221_803_1.jpg',
+  './img/微信图片_20260311222224_804_1.jpg',
+  './img/微信图片_20260311222231_805_1.jpg'
 ])
 
 // 场地图片数据
 const venueImages = ref([
   {
-    src: '/src/img_party/0dc4dc5fc53eb2c3383b8da21718f68d.jpg',
+    src: './img_party/0dc4dc5fc53eb2c3383b8da21718f68d.jpg',
     title: '电玩大厅',
     description: '华丽的入口通道，迎接各位宾客的到来'
   },
   {
-    src: '/src/img_party/22e7e5ba956d2f2f0992aaea14a8f8b8.jpg',
+    src: './img_party/22e7e5ba956d2f2f0992aaea14a8f8b8.jpg',
     title: '户外草坪',
     description: '射箭&户外游戏 E人狂喜！'
   },
   {
-    src: '/src/img_party/a20e507cc2f44952fa90e3f6c9485c75.jpg',
+    src: './img_party/a20e507cc2f44952fa90e3f6c9485c75.jpg',
     title: '懒人桌游',
     description: 'Cissie最爱的狼人杀！！！'
   },
   {
-    src: '/src/img_party/db74d7029a262b488c1eea2dd0ede979.jpg',
+    src: './img_party/db74d7029a262b488c1eea2dd0ede979.jpg',
     title: '台球区域',
     description: '好久没打台球了'
   },
   {
-    src: '/src/img_party/de03777c67acdd8acefd15d3d654eabf.jpg',
+    src: './img_party/de03777c67acdd8acefd15d3d654eabf.jpg',
     title: '聚餐Party',
     description: '烧烤 披萨 蛋糕 茶点~'
   },
   {
-    src: '/src/img_party/fbc660c9b1695ce6b9e829474f2d6f4d.jpg',
+    src: './img_party/fbc660c9b1695ce6b9e829474f2d6f4d.jpg',
     title: '我是歌手',
     description: 'HAPPY BIRTHDAY TO YOU CISSIE!!!'
   }
@@ -506,7 +516,7 @@ const venueImages = ref([
 
 // 导航链接
 const navLinks = ref([
-  { id: 'hero', label: '照片' },
+  { id: 'hero', label: '邀请函主页' },
   { id: 'info', label: '派对信息' },
   { id: 'timeline', label: '活动日程' },
   { id: 'wishes', label: '祝福留言' },
@@ -524,32 +534,32 @@ const games = ref([
   {
     id: 'game1',
     name: '你来我往',
-    image: '/src/img_game/你来我往.png'
+    image: './img_game/你来我往.png'
   },
   {
     id: 'game2',
     name: '加字游戏',
-    image: '/src/img_game/加字游戏.png'
+    image: './img_game/加字游戏.png'
   },
   {
     id: 'game3',
     name: '开关游戏',
-    image: '/src/img_game/开关游戏.png'
+    image: './img_game/开关游戏.png'
   },
   {
     id: 'game4',
     name: '抓鸭子',
-    image: '/src/img_game/抓鸭子.png'
+    image: './img_game/抓鸭子.png'
   },
   {
     id: 'game5',
     name: '真真假假',
-    image: '/src/img_game/真真假假.png'
+    image: './img_game/真真假假.png'
   },
   {
     id: 'game6',
     name: '闹钟炸弹',
-    image: '/src/img_game/闹钟炸弹.png'
+    image: './img_game/闹钟炸弹.png'
   }
 ])
 
@@ -694,13 +704,57 @@ function onWindowResize() {
 }
 
 // 音乐控制
+let audioElement = null
+
 function playMusic() {
-  // 这里可以添加实际的音乐播放逻辑
-  isMusicPlaying.value = true
+  // 创建音频元素并播放音乐
+  // 注意：需要在public目录中添加music.mp3文件
+  if (!audioElement) {
+    try {
+      // 修正音乐文件路径，使用相对路径
+      audioElement = new Audio('./music.mp3')
+      audioElement.loop = true
+      audioElement.volume = 0.3
+      audioElement.play().then(() => {
+        console.log('音乐播放成功')
+        isMusicPlaying.value = true
+      }).catch(err => {
+        console.log('音乐播放失败:', err)
+        // 如果音乐文件不存在或播放失败，仍然设置状态为播放中
+        isMusicPlaying.value = true
+      })
+    } catch (err) {
+      console.log('音乐文件未找到:', err)
+      // 如果音乐文件不存在，仍然设置状态为播放中
+      isMusicPlaying.value = true
+    }
+  } else {
+    audioElement.play().then(() => {
+      console.log('音乐播放成功')
+      isMusicPlaying.value = true
+    }).catch(err => {
+      console.log('音乐播放失败:', err)
+    })
+  }
 }
 
 function toggleMusic() {
-  isMusicPlaying.value = !isMusicPlaying.value
+  if (audioElement) {
+    if (isMusicPlaying.value) {
+      audioElement.pause()
+      isMusicPlaying.value = false
+    } else {
+      audioElement.play().then(() => {
+        console.log('音乐播放成功')
+        isMusicPlaying.value = true
+      }).catch(err => {
+        console.log('音乐播放失败:', err)
+        isMusicPlaying.value = true
+      })
+    }
+  } else {
+    playMusic()
+  }
 }
 
 // 场地导航
