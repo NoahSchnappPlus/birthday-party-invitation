@@ -864,6 +864,10 @@ async function submitRSVP() {
       dietary_remarks: rsvp.value.specialRequests || ''
     }
     
+    console.log('API_BASE_URL:', API_BASE_URL)
+    console.log('请求数据:', rsvpData)
+    console.log('请求URL:', `${API_BASE_URL}/api/rsvp`)
+    
     const response = await fetch(`${API_BASE_URL}/api/rsvp`, {
       method: 'POST',
       headers: {
