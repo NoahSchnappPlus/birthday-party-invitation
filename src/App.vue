@@ -272,7 +272,10 @@
             <div class="space-y-4">
               <input v-model="newWish.name" type="text" placeholder="请输入你的名字" class="w-full px-4 py-3 rounded-lg border border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary">
               <textarea v-model="newWish.content" placeholder="请输入你的祝福" class="w-full px-4 py-3 rounded-lg border border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary h-32"></textarea>
-              <button class="btn-primary w-full" @click="submitWish">发送祝福</button>
+              <button class="btn-primary w-full" @click="submitWish" :disabled="isSubmittingWish">
+                <span v-if="isSubmittingWish">发送中...</span>
+                <span v-else>发送祝福</span>
+              </button>
             </div>
           </div>
           <div class="grid md:grid-cols-2 gap-4">
@@ -321,7 +324,10 @@
                   <label class="block text-dark font-medium mb-2">特殊要求/忌口（选填）</label>
                   <textarea v-model="rsvp.specialRequests" placeholder="请输入特殊要求或忌口" class="w-full px-4 py-3 rounded-lg border border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary h-24"></textarea>
                 </div>
-                <button type="submit" class="btn-primary w-full">提交确认</button>
+                <button type="submit" class="btn-primary w-full" :disabled="isSubmittingRSVP">
+                  <span v-if="isSubmittingRSVP">提交中...</span>
+                  <span v-else>提交确认</span>
+                </button>
               </div>
             </form>
           </div>
@@ -415,9 +421,15 @@
           </div>
         </div>
         
+        <div v-if="voteSuccess" class="mb-6 p-4 bg-green-100 text-green-700 rounded-lg text-center">
+          投票成功！
+        </div>
         <div class="flex justify-end space-x-4">
-          <button class="px-6 py-3 rounded-full border border-gray-300 text-dark hover:bg-gray-100 transition-all duration-300" @click="showGamesModal = false">取消</button>
-          <button class="btn-primary" @click="submitGameVotes">提交投票</button>
+          <button class="px-6 py-3 rounded-full border border-gray-300 text-dark hover:bg-gray-100 transition-all duration-300" @click="showGamesModal = false" :disabled="isVoting">取消</button>
+          <button class="btn-primary" @click="submitGameVotes" :disabled="isVoting">
+            <span v-if="isVoting">投票中...</span>
+            <span v-else>提交投票</span>
+          </button>
         </div>
       </div>
     </div>
@@ -433,6 +445,9 @@ import 'swiper/css'
 import 'swiper/css/effect-coverflow'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
+
+// API 基础地址
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 // 状态管理
 const isLoading = ref(true)
@@ -528,6 +543,8 @@ const navLinks = ref([
 const showGamesModal = ref(false)
 const selectedGames = ref([])
 const gameVotes = ref(JSON.parse(localStorage.getItem('gameVotes')) || {})
+const isVoting = ref(false)
+const voteSuccess = ref(false)
 
 // 游戏数据
 const games = ref([
@@ -572,6 +589,8 @@ const wishes = ref(JSON.parse(localStorage.getItem('birthdayWishes')) || [
 ])
 const rsvp = ref({ name: '', attending: 'yes', guests: '0', specialRequests: '' })
 const rsvpList = ref(JSON.parse(localStorage.getItem('birthdayRSVP')) || [])
+const isSubmittingRSVP = ref(false)
+const isSubmittingWish = ref(false)
 
 // 场地图片已在上方声明
 
@@ -775,20 +794,104 @@ function closeLightbox() {
 }
 
 // 提交祝福
-function submitWish() {
-  if (newWish.value.name && newWish.value.content) {
+async function submitWish() {
+  // 表单验证
+  if (!newWish.value.name) {
+    alert('请留下您的名字')
+    return
+  }
+  if (!newWish.value.content) {
+    alert('请留下您的祝福')
+    return
+  }
+  
+  isSubmittingWish.value = true
+  try {
+    // 准备请求数据
+    const wishData = {
+      guest_name: newWish.value.name,
+      blessing_text: newWish.value.content
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/wishes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(wishData)
+    })
+    
+    if (response.ok) {
+      // 本地存储
+      wishes.value.unshift({ ...newWish.value, timestamp: new Date().toISOString() })
+      localStorage.setItem('birthdayWishes', JSON.stringify(wishes.value))
+      alert('祝福已送达，非常感谢！')
+      newWish.value = { name: '', content: '' }
+    } else {
+      alert('提交失败，请稍后重试')
+    }
+  } catch (error) {
+    console.error('祝福请求失败:', error)
+    // 即使网络请求失败，也保存到本地
     wishes.value.unshift({ ...newWish.value, timestamp: new Date().toISOString() })
     localStorage.setItem('birthdayWishes', JSON.stringify(wishes.value))
+    alert('网络请求失败，已保存到本地')
     newWish.value = { name: '', content: '' }
+  } finally {
+    isSubmittingWish.value = false
   }
 }
 
 // 提交RSVP
-function submitRSVP() {
-  rsvpList.value.push({ ...rsvp.value, timestamp: new Date().toISOString() })
-  localStorage.setItem('birthdayRSVP', JSON.stringify(rsvpList.value))
-  showThankYou.value = true
-  rsvp.value = { name: '', attending: 'yes', guests: '0', specialRequests: '' }
+async function submitRSVP() {
+  // 表单验证
+  if (!rsvp.value.name) {
+    alert('请输入您的姓名')
+    return
+  }
+  if (!rsvp.value.attending) {
+    alert('请选择是否出席')
+    return
+  }
+  
+  isSubmittingRSVP.value = true
+  try {
+    // 准备请求数据
+    const rsvpData = {
+      guest_name: rsvp.value.name,
+      is_attending: rsvp.value.attending === 'yes' ? 1 : 0,
+      accompanying_count: parseInt(rsvp.value.guests) || 0,
+      dietary_remarks: rsvp.value.specialRequests || ''
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/rsvp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(rsvpData)
+    })
+    
+    if (response.ok) {
+      // 本地存储
+      rsvpList.value.push({ ...rsvp.value, timestamp: new Date().toISOString() })
+      localStorage.setItem('birthdayRSVP', JSON.stringify(rsvpList.value))
+      showThankYou.value = true
+      rsvp.value = { name: '', attending: 'yes', guests: '0', specialRequests: '' }
+    } else {
+      alert('提交失败，请稍后重试')
+    }
+  } catch (error) {
+    console.error('RSVP请求失败:', error)
+    // 即使网络请求失败，也保存到本地
+    rsvpList.value.push({ ...rsvp.value, timestamp: new Date().toISOString() })
+    localStorage.setItem('birthdayRSVP', JSON.stringify(rsvpList.value))
+    alert('网络请求失败，已保存到本地')
+    showThankYou.value = true
+    rsvp.value = { name: '', attending: 'yes', guests: '0', specialRequests: '' }
+  } finally {
+    isSubmittingRSVP.value = false
+  }
 }
 
 // 导出数据
@@ -843,17 +946,65 @@ function toggleGameSelection(gameId) {
   }
 }
 
-function submitGameVotes() {
-  selectedGames.value.forEach(gameId => {
-    if (gameVotes.value[gameId]) {
-      gameVotes.value[gameId]++
+async function submitGameVotes() {
+  if (selectedGames.value.length === 0) {
+    alert('请至少选择一个游戏')
+    return
+  }
+  
+  isVoting.value = true
+  try {
+    // 准备请求数据
+    const gameNames = selectedGames.value.map(gameId => {
+      const game = games.value.find(g => g.id === gameId)
+      return game ? game.name : ''
+    }).filter(Boolean)
+    
+    const response = await fetch(`${API_BASE_URL}/api/vote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ games: gameNames })
+    })
+    
+    if (response.ok) {
+      // 本地存储投票结果
+      selectedGames.value.forEach(gameId => {
+        if (gameVotes.value[gameId]) {
+          gameVotes.value[gameId]++
+        } else {
+          gameVotes.value[gameId] = 1
+        }
+      })
+      localStorage.setItem('gameVotes', JSON.stringify(gameVotes.value))
+      
+      voteSuccess.value = true
+      setTimeout(() => {
+        voteSuccess.value = false
+        showGamesModal.value = false
+        selectedGames.value = []
+      }, 2000)
     } else {
-      gameVotes.value[gameId] = 1
+      alert('投票失败，请稍后重试')
     }
-  })
-  localStorage.setItem('gameVotes', JSON.stringify(gameVotes.value))
-  showGamesModal.value = false
-  selectedGames.value = []
+  } catch (error) {
+    console.error('投票请求失败:', error)
+    // 即使网络请求失败，也保存到本地
+    selectedGames.value.forEach(gameId => {
+      if (gameVotes.value[gameId]) {
+        gameVotes.value[gameId]++
+      } else {
+        gameVotes.value[gameId] = 1
+      }
+    })
+    localStorage.setItem('gameVotes', JSON.stringify(gameVotes.value))
+    alert('网络请求失败，已保存到本地')
+    showGamesModal.value = false
+    selectedGames.value = []
+  } finally {
+    isVoting.value = false
+  }
 }
 
 function getGameVoteCount(gameId) {
