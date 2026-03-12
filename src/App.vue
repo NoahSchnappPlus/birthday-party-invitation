@@ -264,10 +264,47 @@
       </section>
       
       <!-- 祝福留言墙模块 -->
-      <section id="wishes" class="section bg-white/50">
-        <div class="max-w-4xl mx-auto w-full">
-          <h2 class="text-4xl font-bold text-primary mb-12 text-center">祝福留言墙</h2>
-          <div class="card mb-8">
+      <section id="wishes" class="section bg-white/50 relative overflow-hidden">
+        <div class="max-w-4xl mx-auto w-full relative z-10">
+          <!-- 漂浮元素容器 -->
+          <div class="relative h-48 mb-12 overflow-visible rounded-lg">
+            <div 
+              v-for="(wish, index) in floatingWishes" 
+              :key="wish.id"
+              class="absolute px-3 py-2 rounded-lg bg-white/40 backdrop-blur-sm shadow-md text-sm max-w-xs border border-primary/20 hover:bg-white/70 transition-all duration-300 cursor-pointer"
+              :style="{
+                left: '0%',
+                top: wish.y + '%',
+                animation: (wish.isPaused || isAllPaused) ? 'none' : `float ${wish.speed}s linear infinite`,
+                animationDelay: wish.delay + 's',
+                zIndex: (wish.isPaused || isAllPaused) ? '100' : wish.zIndex,
+                minWidth: '140px',
+                maxWidth: '200px',
+                minHeight: '60px',
+                maxHeight: '120px',
+                opacity: (wish.isPaused || isAllPaused) ? '0.9' : '0.6',
+                visibility: 'visible',
+                transform: (wish.isPaused || isAllPaused) ? 'scale(1.1)' : 'scale(1)'
+              }"
+              @mouseenter="pauseFloatingWish()"
+              @mouseleave="resumeFloatingWish()"
+              @click="toggleFloatingWishPause(wish.id)"
+            >
+              <div class="font-bold text-primary mb-1 text-sm">{{ wish.name }}</div>
+              <div class="text-dark text-xs overflow-y-auto max-h-12">{{ wish.content }}</div>
+              <div v-if="wish.formattedTime" class="text-gray-500 text-xs mt-1">{{ wish.formattedTime }}</div>
+            </div>
+          </div>
+          
+          <div class="mb-12">
+            <h2 class="text-4xl font-bold text-primary text-center mb-4">祝福留言墙</h2>
+            <div class="flex justify-center">
+              <button class="btn-primary relative z-20" @click="showAllWishes = true">
+                查看全部祝福
+              </button>
+            </div>
+          </div>
+          <div class="card mb-8 relative z-10">
             <h3 class="text-2xl font-bold text-dark mb-4">写下你的祝福</h3>
             <div class="space-y-4">
               <input v-model="newWish.name" type="text" placeholder="请输入你的名字" class="w-full px-4 py-3 rounded-lg border border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary">
@@ -276,12 +313,6 @@
                 <span v-if="isSubmittingWish">发送中...</span>
                 <span v-else>发送祝福</span>
               </button>
-            </div>
-          </div>
-          <div class="grid md:grid-cols-2 gap-4">
-            <div v-for="(wish, index) in wishes" :key="index" class="card animate-fade-in-up" :style="{ animationDelay: index * 0.1 + 's' }">
-              <h4 class="text-lg font-bold text-primary mb-2">{{ wish.name }}</h4>
-              <p class="text-dark/80">{{ wish.content }}</p>
             </div>
           </div>
         </div>
@@ -433,6 +464,40 @@
         </div>
       </div>
     </div>
+    
+    <!-- 查看全部祝福弹窗 -->
+    <div v-if="showAllWishes" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-3xl font-bold text-primary">全部祝福</h3>
+          <button class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-dark hover:bg-gray-300 transition-all duration-300" @click="showAllWishes = false">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div v-for="(wish, index) in wishes" :key="index" class="border border-primary/30 rounded-lg p-4 bg-white/50">
+            <div class="flex justify-between items-start">
+              <h4 class="font-bold text-primary">{{ wish.name }}</h4>
+              <span class="text-xs text-gray-500">{{ wish.formattedTime || (wish.timestamp ? new Date(wish.timestamp).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') }}</span>
+            </div>
+            <p class="mt-2 text-dark/80">{{ wish.content }}</p>
+          </div>
+          <div v-if="isLoadingWishes" class="text-center py-8">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4"></div>
+            <p class="text-primary">加载祝福中...</p>
+          </div>
+          <div v-else-if="wishesError" class="text-center py-8 text-red-500">
+            {{ wishesError }}
+          </div>
+          <div v-else-if="wishes.length === 0" class="text-center py-8 text-gray-500">
+            暂无祝福信息
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -458,6 +523,7 @@ const lightboxIndex = ref(0)
 const showThankYou = ref(false)
 const showMobileMenu = ref(false)
 const activeSection = ref('hero')
+const showAllWishes = ref(false)
 
 // 图片数据
 const galleryImages = ref([
@@ -582,15 +648,22 @@ const games = ref([
 
 // 表单数据
 const newWish = ref({ name: '', content: '' })
-const wishes = ref(JSON.parse(localStorage.getItem('birthdayWishes')) || [
-  { name: '小明', content: '祝你生日快乐，永远年轻漂亮！' },
-  { name: '小红', content: '期待参加你的生日派对，一定会很开心！' },
-  { name: '小李', content: '愿你的23岁充满惊喜和美好！' }
-])
+const wishes = ref([])
 const rsvp = ref({ name: '', attending: 'yes', guests: '0', specialRequests: '' })
 const rsvpList = ref(JSON.parse(localStorage.getItem('birthdayRSVP')) || [])
 const isSubmittingRSVP = ref(false)
 const isSubmittingWish = ref(false)
+const isLoadingWishes = ref(false)
+const wishesError = ref('')
+const lastWishRequestTime = ref(0)
+const wishRequestTimeout = ref(null)
+
+// 漂浮留言
+const floatingWishes = ref([])
+const wishFloatInterval = ref(null)
+const isFloatingEnabled = ref(true)
+const floatDensity = ref(3) // 密度：1-10，数字越大密度越高
+const isAllPaused = ref(false)
 
 // 场地图片已在上方声明
 
@@ -599,15 +672,19 @@ let scene, camera, renderer, bubbles = []
 const bubbleContainer = ref(null)
 
 // 初始化加载
-onMounted(() => {
+onMounted(async () => {
   // 模拟加载过程
   const loadingInterval = setInterval(() => {
     loadingProgress.value += 5
     if (loadingProgress.value >= 100) {
       clearInterval(loadingInterval)
-      setTimeout(() => {
+      setTimeout(async () => {
         isLoading.value = false
         initBubbles()
+        // 页面加载时获取祝福语数据
+        await fetchWishes()
+        console.log('准备启动漂浮留言')
+        startFloatingWishes()
       }, 500)
     }
   }, 100)
@@ -631,6 +708,7 @@ onUnmounted(() => {
     scene.clear()
   }
   window.removeEventListener('scroll', updateActiveSection)
+  stopFloatingWishes()
 })
 
 // 初始化3D泡泡
@@ -730,18 +808,37 @@ function playMusic() {
   // 注意：需要在public目录中添加music.mp3文件
   if (!audioElement) {
     try {
-      // 修正音乐文件路径，使用相对路径
-      audioElement = new Audio('./music.mp3')
-      audioElement.loop = true
-      audioElement.volume = 0.3
-      audioElement.play().then(() => {
-        console.log('音乐播放成功')
-        isMusicPlaying.value = true
-      }).catch(err => {
-        console.log('音乐播放失败:', err)
-        // 如果音乐文件不存在或播放失败，仍然设置状态为播放中
-        isMusicPlaying.value = true
-      })
+      // 尝试不同的音乐文件路径
+      const musicPaths = ['./music.mp3', '/music.mp3', 'music.mp3']
+      let found = false
+      
+      for (const path of musicPaths) {
+        try {
+          audioElement = new Audio(path)
+          audioElement.loop = true
+          audioElement.volume = 0.3
+          
+          // 测试是否能加载音频
+          audioElement.load()
+          
+          // 播放音频
+          return audioElement.play().then(() => {
+            console.log('音乐播放成功，路径:', path)
+            isMusicPlaying.value = true
+          }).catch(err => {
+            console.log('音乐播放失败:', err)
+            // 如果音乐文件不存在或播放失败，仍然设置状态为播放中
+            isMusicPlaying.value = true
+          })
+        } catch (err) {
+          console.log('尝试路径失败:', path, err)
+          continue
+        }
+      }
+      
+      // 如果所有路径都失败
+      console.log('所有音乐路径都失败')
+      isMusicPlaying.value = true
     } catch (err) {
       console.log('音乐文件未找到:', err)
       // 如果音乐文件不存在，仍然设置状态为播放中
@@ -793,6 +890,100 @@ function closeLightbox() {
   lightboxVisible.value = false
 }
 
+// 获取祝福语数据
+async function fetchWishes() {
+  // 防抖处理：避免短时间内重复请求
+  const now = Date.now()
+  if (now - lastWishRequestTime.value < 1000) {
+    return
+  }
+  
+  isLoadingWishes.value = true
+  wishesError.value = ''
+  lastWishRequestTime.value = now
+  
+  // 清除之前的超时
+  if (wishRequestTimeout.value) {
+    clearTimeout(wishRequestTimeout.value)
+  }
+  
+  try {
+    // 设置30秒超时
+    const controller = new AbortController()
+    wishRequestTimeout.value = setTimeout(() => controller.abort(), 30000)
+    
+    const response = await fetch(`${API_BASE_URL}/api/wishes`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      },
+      signal: controller.signal
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const responseData = await response.json()
+    console.log('获取祝福语响应:', responseData)
+    
+    // 检查接口返回的success状态
+    if (!responseData.success) {
+      throw new Error(responseData.message || '获取祝福失败')
+    }
+    
+    // 提取data数组
+    const data = responseData.data || []
+    console.log('获取祝福语数据:', data)
+    
+    // 处理数据，格式化时间
+    const formattedWishes = data.map(wish => ({
+      name: wish.guest_name,
+      content: wish.blessing_text,
+      timestamp: new Date(wish.created_at).toISOString(),
+      formattedTime: formatDateTime(wish.created_at)
+    }))
+    
+    // 更新本地数据
+    wishes.value = formattedWishes
+    localStorage.setItem('birthdayWishes', JSON.stringify(formattedWishes))
+  } catch (error) {
+    console.error('获取祝福语失败:', error)
+    wishesError.value = error.name === 'AbortError' ? '请求超时，请稍后重试' : error.message || '获取祝福失败，请稍后重试'
+    
+    // 如果请求失败，使用本地缓存数据
+    const cachedWishes = JSON.parse(localStorage.getItem('birthdayWishes'))
+    if (cachedWishes) {
+      wishes.value = cachedWishes
+    } else {
+      // 如果没有缓存，使用默认数据
+      wishes.value = [
+        { name: '小明', content: '祝你生日快乐，永远年轻漂亮！', timestamp: new Date().toISOString(), formattedTime: formatDateTime(new Date()) },
+        { name: '小红', content: '期待参加你的生日派对，一定会很开心！', timestamp: new Date().toISOString(), formattedTime: formatDateTime(new Date()) },
+        { name: '小李', content: '愿你的23岁充满惊喜和美好！', timestamp: new Date().toISOString(), formattedTime: formatDateTime(new Date()) }
+      ]
+    }
+  } finally {
+    isLoadingWishes.value = false
+    if (wishRequestTimeout.value) {
+      clearTimeout(wishRequestTimeout.value)
+      wishRequestTimeout.value = null
+    }
+  }
+}
+
+// 格式化日期时间
+function formatDateTime(dateString) {
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 // 提交祝福
 async function submitWish() {
   // 表单验证
@@ -813,30 +1004,41 @@ async function submitWish() {
       blessing_text: newWish.value.content
     }
     
+    console.log('祝福请求数据:', wishData)
+    console.log('祝福请求数据字符串:', JSON.stringify(wishData))
+    
     const response = await fetch(`${API_BASE_URL}/api/wishes`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify(wishData)
     })
     
+    console.log('祝福请求成功发送')
+    
     if (response.ok) {
-      // 本地存储
-      wishes.value.unshift({ ...newWish.value, timestamp: new Date().toISOString() })
-      localStorage.setItem('birthdayWishes', JSON.stringify(wishes.value))
       alert('祝福已送达，非常感谢！')
       newWish.value = { name: '', content: '' }
+      // 提交成功后立即获取最新数据
+      await fetchWishes()
     } else {
       alert('提交失败，请稍后重试')
     }
   } catch (error) {
     console.error('祝福请求失败:', error)
-    // 即使网络请求失败，也保存到本地
-    wishes.value.unshift({ ...newWish.value, timestamp: new Date().toISOString() })
-    localStorage.setItem('birthdayWishes', JSON.stringify(wishes.value))
     alert('网络请求失败，已保存到本地')
     newWish.value = { name: '', content: '' }
+    // 即使网络请求失败，也更新本地数据
+    const newWishItem = {
+      name: newWish.value.name,
+      content: newWish.value.content,
+      timestamp: new Date().toISOString(),
+      formattedTime: formatDateTime(new Date())
+    }
+    wishes.value.unshift(newWishItem)
+    localStorage.setItem('birthdayWishes', JSON.stringify(wishes.value))
   } finally {
     isSubmittingWish.value = false
   }
@@ -867,23 +1069,41 @@ async function submitRSVP() {
     console.log('API_BASE_URL:', API_BASE_URL)
     console.log('请求数据:', rsvpData)
     console.log('请求URL:', `${API_BASE_URL}/api/rsvp`)
+    console.log('请求数据字符串:', JSON.stringify(rsvpData))
     
-    const response = await fetch(`${API_BASE_URL}/api/rsvp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(rsvpData)
-    })
-    
-    if (response.ok) {
-      // 本地存储
-      rsvpList.value.push({ ...rsvp.value, timestamp: new Date().toISOString() })
-      localStorage.setItem('birthdayRSVP', JSON.stringify(rsvpList.value))
-      showThankYou.value = true
-      rsvp.value = { name: '', attending: 'yes', guests: '0', specialRequests: '' }
-    } else {
-      alert('提交失败，请稍后重试')
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/rsvp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(rsvpData)
+      })
+      
+      console.log('请求成功发送')
+      
+      console.log('响应状态:', response.status)
+      console.log('响应状态文本:', response.statusText)
+      
+      const responseData = await response.json()
+      console.log('响应数据:', responseData)
+      
+      if (response.ok) {
+        // 本地存储
+        rsvpList.value.push({ ...rsvp.value, timestamp: new Date().toISOString() })
+        localStorage.setItem('birthdayRSVP', JSON.stringify(rsvpList.value))
+        showThankYou.value = true
+        rsvp.value = { name: '', attending: 'yes', guests: '0', specialRequests: '' }
+      } else {
+        console.log('响应错误:', responseData)
+        alert('提交失败，请稍后重试')
+      }
+    } catch (error) {
+      console.error('网络请求错误:', error)
+      console.error('错误类型:', error.name)
+      console.error('错误消息:', error.message)
+      throw error // 重新抛出错误，让外部catch块处理
     }
   } catch (error) {
     console.error('RSVP请求失败:', error)
@@ -964,13 +1184,20 @@ async function submitGameVotes() {
       return game ? game.name : ''
     }).filter(Boolean)
     
+    const voteData = { games: gameNames }
+    console.log('投票请求数据:', voteData)
+    console.log('投票请求数据字符串:', JSON.stringify(voteData))
+    
     const response = await fetch(`${API_BASE_URL}/api/vote`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: JSON.stringify({ games: gameNames })
+      body: JSON.stringify(voteData)
     })
+    
+    console.log('投票请求成功发送')
     
     if (response.ok) {
       // 本地存储投票结果
@@ -1014,7 +1241,186 @@ async function submitGameVotes() {
 function getGameVoteCount(gameId) {
   return gameVotes.value[gameId] || 0
 }
+
+// 漂浮留言管理
+function startFloatingWishes() {
+  console.log('启动漂浮留言')
+  if (wishFloatInterval.value) {
+    console.log('漂浮留言已经在运行')
+    return
+  }
+  
+  console.log('当前留言数量:', wishes.value.length)
+  // 清空现有漂浮留言，避免异常悬浮框
+  floatingWishes.value = []
+  
+  // 初始添加一些漂浮留言，使用不同的延迟
+  for (let i = 0; i < 3; i++) {
+    console.log('添加第', i+1, '条漂浮留言')
+    setTimeout(() => {
+      addFloatingWish()
+    }, i * 1000)
+  }
+  
+  // 设置定时器，定期添加漂浮留言
+  const interval = 3000 / floatDensity.value // 根据密度调整间隔，确保气泡有序生成
+  console.log('设置定时器，间隔:', interval, 'ms')
+  wishFloatInterval.value = setInterval(() => {
+    if (isFloatingEnabled.value && floatingWishes.value.length < 10) {
+      console.log('定时器触发，添加漂浮留言')
+      addFloatingWish()
+      console.log('当前漂浮留言数量:', floatingWishes.value.length)
+    }
+  }, interval)
+  
+  console.log('漂浮留言启动完成')
+}
+
+function stopFloatingWishes() {
+  if (wishFloatInterval.value) {
+    clearInterval(wishFloatInterval.value)
+    wishFloatInterval.value = null
+  }
+  floatingWishes.value = []
+}
+
+function addFloatingWish() {
+  console.log('addFloatingWish 被调用')
+  
+  // 限制漂浮留言数量不超过10个，避免重叠
+  if (floatingWishes.value.length >= 10) {
+    console.log('漂浮留言数量已达上限')
+    return
+  }
+  
+  if (wishes.value.length === 0) {
+    console.log('没有留言可以漂浮')
+    return
+  }
+  
+  // 随机选择一条留言
+  const randomIndex = Math.floor(Math.random() * wishes.value.length)
+  const wish = wishes.value[randomIndex]
+  console.log('选择的留言:', wish)
+  
+  // 生成随机漂浮参数
+  const floatParams = generateRandomFloatParams()
+  console.log('生成的漂浮参数:', floatParams)
+  
+  // 创建漂浮留言对象
+  const floatingWish = {
+    ...wish,
+    x: floatParams.x,
+    y: floatParams.y,
+    speed: floatParams.speed,
+    delay: floatParams.delay,
+    zIndex: floatParams.zIndex,
+    id: Date.now() + Math.random(),
+    isPaused: false
+  }
+  console.log('创建的漂浮留言:', floatingWish)
+  
+  // 添加到漂浮留言数组
+  floatingWishes.value.push(floatingWish)
+  console.log('添加后漂浮留言数量:', floatingWishes.value.length)
+  
+  // 设置定时器，在动画结束后移除留言
+  const duration = (floatParams.speed + floatParams.delay) * 1000
+  console.log('设置移除定时器，延迟:', duration, 'ms')
+  setTimeout(() => {
+    const index = floatingWishes.value.findIndex(w => w.id === floatingWish.id)
+    if (index > -1) {
+      const wish = floatingWishes.value[index]
+      // 只有当气泡未被暂停时才移除
+      if (!wish.isPaused) {
+        console.log('移除漂浮留言，索引:', index)
+        floatingWishes.value.splice(index, 1)
+        console.log('移除后漂浮留言数量:', floatingWishes.value.length)
+      } else {
+        console.log('气泡已暂停，不移除')
+      }
+    } else {
+      console.log('未找到要移除的漂浮留言')
+    }
+  }, duration)
+}
+
+function generateRandomFloatParams() {
+  // 实现两行有序漂浮效果
+  const yPositions = [30, 70]; // 两行分布，适应新容器高度
+  const y = yPositions[Math.floor(Math.random() * yPositions.length)];
+  
+  return {
+    x: 100, // 从右侧进入
+    y: y, // 两行分布的垂直位置
+    speed: Math.random() * 15 + 15, // 控制速度范围
+    delay: Math.random() * 2, // 控制延迟范围，避免同时出现
+    zIndex: Math.floor(Math.random() * 10) + 30 // 随机z-index
+  }
+}
+
+// 控制漂浮效果
+function toggleFloating() {
+  isFloatingEnabled.value = !isFloatingEnabled.value
+  if (isFloatingEnabled.value) {
+    startFloatingWishes()
+  } else {
+    stopFloatingWishes()
+  }
+}
+
+// 调整漂浮密度
+function adjustFloatDensity(density) {
+  floatDensity.value = Math.max(1, Math.min(10, density))
+  stopFloatingWishes()
+  startFloatingWishes()
+}
+
+// 暂停所有漂浮留言
+function pauseFloatingWish() {
+  isAllPaused.value = true
+  floatingWishes.value.forEach(wish => {
+    wish.isPaused = true
+  })
+}
+
+// 恢复所有漂浮留言
+function resumeFloatingWish() {
+  isAllPaused.value = false
+  floatingWishes.value.forEach(wish => {
+    wish.isPaused = false
+  })
+}
+
+// 切换单个漂浮留言的暂停状态
+function toggleFloatingWishPause(id) {
+  const wish = floatingWishes.value.find(w => w.id === id)
+  if (wish) {
+    wish.isPaused = !wish.isPaused
+  }
+}
 </script>
+
+<style>
+/* 全局样式 */
+/* 漂浮窗动画 */
+@keyframes float {
+  0% {
+    transform: translateX(100vw) translateY(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.6;
+  }
+  95% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(-100%) translateY(0);
+    opacity: 0;
+  }
+}
+</style>
 
 <style scoped>
 /* 自定义滚动条 */
