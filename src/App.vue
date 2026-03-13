@@ -1007,6 +1007,7 @@ async function submitWish() {
     console.log('祝福请求数据:', wishData)
     console.log('祝福请求数据字符串:', JSON.stringify(wishData))
     
+    // 尝试发送请求
     const response = await fetch(`${API_BASE_URL}/api/wishes`, {
       method: 'POST',
       headers: {
@@ -1024,24 +1025,31 @@ async function submitWish() {
       // 提交成功后立即获取最新数据
       await fetchWishes()
     } else {
-      alert('提交失败，请稍后重试')
+      // 即使响应不成功，也保存到本地
+      saveWishLocally(newWish.value)
+      alert('提交到服务器失败，但已保存到本地')
     }
   } catch (error) {
     console.error('祝福请求失败:', error)
+    // 网络错误时保存到本地
+    saveWishLocally(newWish.value)
     alert('网络请求失败，已保存到本地')
-    newWish.value = { name: '', content: '' }
-    // 即使网络请求失败，也更新本地数据
-    const newWishItem = {
-      name: newWish.value.name,
-      content: newWish.value.content,
-      timestamp: new Date().toISOString(),
-      formattedTime: formatDateTime(new Date())
-    }
-    wishes.value.unshift(newWishItem)
-    localStorage.setItem('birthdayWishes', JSON.stringify(wishes.value))
   } finally {
     isSubmittingWish.value = false
   }
+}
+
+// 保存祝福到本地
+function saveWishLocally(wish) {
+  const newWishItem = {
+    name: wish.name,
+    content: wish.content,
+    timestamp: new Date().toISOString(),
+    formattedTime: formatDateTime(new Date())
+  }
+  wishes.value.unshift(newWishItem)
+  localStorage.setItem('birthdayWishes', JSON.stringify(wishes.value))
+  newWish.value = { name: '', content: '' }
 }
 
 // 提交RSVP
